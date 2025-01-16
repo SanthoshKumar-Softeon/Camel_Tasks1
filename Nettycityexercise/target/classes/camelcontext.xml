@@ -1,0 +1,117 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:camel="http://camel.apache.org/schema/spring"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation=" 
+           http://www.springframework.org/schema/beans file:/C:/Users/Santhoshkumark/Documents/XSD/spring-beans.xsd 
+           http://camel.apache.org/schema/spring file:/C:/Users/Santhoshkumark/Documents/XSD/camel-spring.xsd">
+
+    <!-- Define the Processor Bean -->
+    <bean id="cityProcessor" class="nettycity.Cityprocessor" />
+
+    <camel:camelContext>
+        <camel:restConfiguration component="netty-http" port="8080" host="localhost" bindingMode="json" />
+
+        <camel:rest path="/api/cities">
+            <camel:get>
+                <camel:to uri="direct:getAllCities" />
+            </camel:get>
+            <camel:get path="/{id}">
+                <camel:to uri="direct:getCityById" />
+            </camel:get>
+            <camel:post>
+                <camel:to uri="direct:addCity" />
+            </camel:post>
+            <camel:delete path="/{id}">
+                <camel:to uri="direct:deleteCity" />
+            </camel:delete>
+        </camel:rest>
+
+        <!-- Route for fetching all cities -->
+        <camel:route>
+            <camel:from uri="direct:getAllCities"/>
+            <camel:setBody>
+                 <camel:constant> [ { "id": 1, "name": "New York" }, { "id": 2, "name": "London" } ] </camel:constant>
+            </camel:setBody>
+        </camel:route>
+
+        <!-- Route for fetching a city by ID -->
+        <camel:route>
+            <camel:from uri="direct:getCityById" />
+            <camel:log message="Fetching city with ID: ${header.id}" />
+            <camel:choice>
+                <camel:when>
+                    <camel:simple>${header.id} == '1'</camel:simple>
+                    <camel:setBody>
+                        <camel:constant>{"id": 1, "name": "New York"}</camel:constant>
+                    </camel:setBody>
+                </camel:when>
+                <camel:when>
+                    <camel:simple>${header.id} == '2'</camel:simple>
+                    <camel:setBody>
+                        <camel:constant>{"id": 2, "name": "London"}</camel:constant>
+                    </camel:setBody>
+                </camel:when>
+                <camel:otherwise>
+                    <camel:setBody>
+                        <camel:constant>{"error": "City not found"}</camel:constant>
+                    </camel:setBody>
+                </camel:otherwise>
+            </camel:choice>
+            <camel:convertBodyTo type="java.lang.String" />
+        </camel:route>
+
+        <!-- Route for adding a new city -->
+        <camel:route>
+            <camel:from uri="direct:addCity" />
+            <camel:log message="Incoming body: ${body}" />
+            
+             <camel:marshal>
+                <camel:json library="Jackson" />
+            </camel:marshal>
+            
+            <!-- Process the city data -->
+            <camel:process ref="cityProcessor" />
+            
+            <!-- Set a response -->
+            <camel:setBody>
+                <camel:constant>{"success": "City added successfully"}</camel:constant>
+            </camel:setBody>
+            
+            <!-- Convert response to String -->
+            <camel:convertBodyTo type="java.lang.String" />
+        </camel:route>
+
+        <!-- Route for deleting a city -->
+        <camel:route>
+            <camel:from uri="direct:deleteCity" />
+            <camel:log message="Deleting city with ID: ${header.id}" />
+            
+            <!-- Check if the ID exists and delete -->
+            <camel:choice>
+                <camel:when>
+                    <camel:simple>${header.id} == '1'</camel:simple>
+                    <!-- Simulate deletion of city with ID=1 -->
+                    <camel:setBody>
+                        <camel:constant>{"success": "City with ID 1 (New York) deleted successfully"}</camel:constant>
+                    </camel:setBody>
+                </camel:when>
+                <camel:when>
+                    <camel:simple>${header.id} == '2'</camel:simple>
+                    <!-- Simulate deletion of city with ID=2 -->
+                    <camel:setBody>
+                        <camel:constant>{"success": "City with ID 2 (London) deleted successfully"}</camel:constant>
+                    </camel:setBody>
+                </camel:when>
+                <camel:otherwise>
+                    <camel:setBody>
+                        <camel:constant>{"error": "City not found for deletion"}</camel:constant>
+                    </camel:setBody>
+                </camel:otherwise>
+            </camel:choice>
+            
+            <!-- Convert response to String -->
+            <camel:convertBodyTo type="java.lang.String" />
+        </camel:route>
+
+    </camel:camelContext>
+</beans>
