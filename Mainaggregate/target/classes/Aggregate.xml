@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:camel="http://camel.apache.org/schema/spring"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://camel.apache.org/schema/spring https://camel.apache.org/schema/spring/camel-spring.xsd">
+
+    <!-- Apache Camel Context -->
+    <camel:camelContext>
+        <!-- Main Route -->
+        <camel:route id="camelRecipientListWithAggregator">
+            <camel:from uri="direct:start" />
+            <camel:log message="Starting recipient list to services..." />
+
+            <!-- Recipient List -->
+            <camel:setHeader name="recipientList">
+                <camel:constant>direct:serviceA,direct:serviceB</camel:constant>
+            </camel:setHeader>
+
+            <camel:recipientList delimiter=",">
+                <camel:header>recipientList</camel:header>
+            </camel:recipientList>
+
+            <!-- Aggregator -->
+            <camel:aggregate aggregationStrategy="connectionAggregator" completionSize="2">
+                <camel:correlationExpression>
+                    <camel:simple>${exchangeId}</camel:simple>
+                </camel:correlationExpression>
+                <camel:log message="Aggregating response: ${body}" />
+            </camel:aggregate>
+
+            <!-- Log Aggregated Response -->
+            <camel:log message="Aggregated response: ${body}" />
+        </camel:route>
+
+        <!-- Service A Route -->
+        <camel:route id="serviceARoute">
+            <camel:from uri="direct:serviceA" />
+            <camel:log message="Service A is connected" />
+            <camel:setBody>
+                <camel:constant>Response from Service A</camel:constant>
+            </camel:setBody>
+        </camel:route>
+
+        <!-- Service B Route -->
+        <camel:route id="serviceBRoute">
+            <camel:from uri="direct:serviceB" />
+            <camel:log message="Service B is connected" />
+            <camel:setBody>
+                <camel:constant>Response from Service B</camel:constant>
+            </camel:setBody>
+        </camel:route>
+    </camel:camelContext>
+
+    <!-- Aggregation Strategy -->
+    <bean id="connectionAggregator" class="Mainaggregate.myAggregateStrategy" />
+</beans>

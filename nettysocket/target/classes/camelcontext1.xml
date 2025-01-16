@@ -1,0 +1,31 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+
+	xmlns:camel="http://camel.apache.org/schema/spring"
+
+	xsi:schemaLocation="
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+	<!-- Define Camel Context -->
+	<camel:camelContext id="camelContext">
+
+		<!-- Netty Server Route -->
+		<camel:route id="netty-server-route">
+			<!-- Listening on port 8080 -->
+			<camel:from
+				uri="netty:tcp://0.0.0.0:8080?sync=true&amp;textline=true" />
+			<!-- Log incoming message -->
+			<camel:log message="Server received: ${body}" />
+			<!-- Append custom message -->
+			<camel:setBody>
+                <camel:simple>Data received from client:${body}.Current timestamp: ${date:now:yyyy-MM-dd HH:mm:ss}</camel:simple>
+			</camel:setBody>
+		</camel:route>
+
+	</camel:camelContext>
+
+</beans>
+
+ 

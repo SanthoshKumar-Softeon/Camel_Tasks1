@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:camel="http://camel.apache.org/schema/spring"
+	xsi:schemaLocation="
+           http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+
+	<!-- Import additional Camel routes -->
+	<import resource="classpath:camelroute.xml"/>
+
+	<bean id="myDataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <property name="driverClassName" value="oracle.jdbc.OracleDriver" />
+        <property name="url" value="jdbc:oracle:thin:@//192.1.2.45:1521/elite19c" />
+        <property name="username" value="s241oradev" />
+        <property name="password" value="s241oradev" />
+    </bean>
+
+    <!-- Define SQL Component -->
+    <bean id="sql" class="org.apache.camel.component.sql.SqlComponent">
+        <property name="dataSource" ref="myDataSource" />
+    </bean>
+
+    <!-- Define CamelContext -->
+    <camel:camelContext id="camel" xmlns="http://camel.apache.org/schema/spring">
+        <camel:routeContextRef ref="routes" />
+    </camel:camelContext>
+</beans>
